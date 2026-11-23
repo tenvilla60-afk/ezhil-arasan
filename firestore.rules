@@ -1,0 +1,269 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: default deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerified() && request.auth.token.email == 'ezhil0331@gmail.com';
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'displayName', 'email', 'phone', 'company',
+          'plan', 'role', 'aiCreditsUsed', 'aiCreditsLimit',
+          'activeServices', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'displayName', 'email', 'phone', 'company',
+          'plan', 'role', 'aiCreditsUsed', 'aiCreditsLimit',
+          'activeServices', 'createdAt', 'updatedAt'
+        ])
+        && data.uid is string && data.uid == userId && isValidId(data.uid)
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 150
+        && data.phone is string && data.phone.size() <= 30
+        && data.company is string && data.company.size() <= 120
+        && data.plan in ['starter', 'growth', 'enterprise']
+        && data.role in ['customer', 'admin']
+        && data.aiCreditsUsed is number && data.aiCreditsUsed >= 0 && data.aiCreditsUsed <= 10000000
+        && data.aiCreditsLimit is number && data.aiCreditsLimit >= 0 && data.aiCreditsLimit <= 10000000
+        && data.activeServices is list && data.activeServices.size() <= 5
+        && data.activeServices.hasOnly(['ai-robot', 'ai-automation', 'ai-shopping', 'ai-business', 'ai-video'])
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAutomation(data, userId) {
+      return data.keys().hasAll([
+          'userId', 'title', 'category', 'status', 'trigger', 'runsCount', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'title', 'category', 'status', 'trigger', 'runsCount', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId == userId && isValidId(data.userId)
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.category in ['support', 'email', 'workflow', 'task']
+        && data.status in ['active', 'paused', 'completed']
+        && data.trigger is string && data.trigger.size() >= 1 && data.trigger.size() <= 200
+        && data.runsCount is number && data.runsCount >= 0 && data.runsCount <= 10000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBusinessCustomer(data, userId) {
+      return data.keys().hasAll([
+          'userId', 'name', 'email', 'company', 'stage', 'monthlyValue', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'name', 'email', 'company', 'stage', 'monthlyValue', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId == userId && isValidId(data.userId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 150
+        && data.company is string && data.company.size() >= 1 && data.company.size() <= 120
+        && data.stage in ['lead', 'active', 'retained']
+        && data.monthlyValue is number && data.monthlyValue >= 0 && data.monthlyValue <= 10000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPaymentOrder(data, userId) {
+      return data.keys().hasAll([
+          'userId', 'orderType', 'itemSummary', 'totalAmount', 'currency',
+          'paymentMethod', 'upiTransactionRef', 'payerName', 'payerPhone',
+          'shippingAddress', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'orderType', 'itemSummary', 'totalAmount', 'currency',
+          'paymentMethod', 'upiTransactionRef', 'payerName', 'payerPhone',
+          'shippingAddress', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId == userId && isValidId(data.userId)
+        && data.orderType in ['merchandise', 'subscription']
+        && data.itemSummary is string && data.itemSummary.size() >= 1 && data.itemSummary.size() <= 300
+        && data.totalAmount is number && data.totalAmount >= 0 && data.totalAmount <= 10000000
+        && data.currency is string && data.currency.size() >= 1 && data.currency.size() <= 10
+        && data.paymentMethod == 'upi_scanner'
+        && data.upiTransactionRef is string && data.upiTransactionRef.size() >= 4 && data.upiTransactionRef.size() <= 100
+        && data.payerName is string && data.payerName.size() >= 1 && data.payerName.size() <= 100
+        && data.payerPhone is string && data.payerPhone.size() >= 6 && data.payerPhone.size() <= 30
+        && data.shippingAddress is string && data.shippingAddress.size() <= 300
+        && data.status in ['pending_verification', 'verified', 'fulfilled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection: /users/{userId} ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isVerified()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().role == 'customer'
+        && incoming().aiCreditsUsed == 0
+        && incoming().aiCreditsLimit <= 2500
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isOwner(userId)
+            && incoming().role == existing().role
+            && incoming().aiCreditsLimit == existing().aiCreditsLimit
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName', 'phone', 'company', 'plan', 'aiCreditsUsed', 'activeServices', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(userId);
+
+      // --- Subcollection: /users/{userId}/automations/{automationId} ---
+      match /automations/{automationId} {
+        allow get: if isValidId(userId) && isValidId(automationId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(automationId)
+          && isValidAutomation(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isVerified()
+          && isValidId(userId)
+          && isValidId(automationId)
+          && isValidAutomation(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            isAdmin()
+            || (
+              isOwner(userId)
+              && existing().status != 'completed'
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'title', 'category', 'status', 'trigger', 'runsCount', 'updatedAt'
+              ])
+            )
+          );
+
+        allow delete: if isValidId(userId) && isValidId(automationId) && (isOwner(userId) || isAdmin());
+      }
+
+      // --- Subcollection: /users/{userId}/customers/{customerId} ---
+      match /customers/{customerId} {
+        allow get: if isValidId(userId) && isValidId(customerId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(customerId)
+          && isValidBusinessCustomer(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isVerified()
+          && isValidId(userId)
+          && isValidId(customerId)
+          && isValidBusinessCustomer(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            isAdmin()
+            || (
+              isOwner(userId)
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'name', 'email', 'company', 'stage', 'monthlyValue', 'updatedAt'
+              ])
+            )
+          );
+
+        allow delete: if isValidId(userId) && isValidId(customerId) && (isOwner(userId) || isAdmin());
+      }
+
+      // --- Subcollection: /users/{userId}/orders/{orderId} ---
+      match /orders/{orderId} {
+        allow get: if isValidId(userId) && isValidId(orderId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(orderId)
+          && isValidPaymentOrder(incoming(), userId)
+          && incoming().status == 'pending_verification'
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isVerified()
+          && isValidId(userId)
+          && isValidId(orderId)
+          && isValidPaymentOrder(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            isAdmin()
+            || (
+              isOwner(userId)
+              && existing().status == 'pending_verification'
+              && incoming().status == 'pending_verification'
+              && incoming().totalAmount == existing().totalAmount
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'upiTransactionRef', 'payerName', 'payerPhone', 'shippingAddress', 'updatedAt'
+              ])
+            )
+          );
+
+        allow delete: if isAdmin() && isValidId(userId) && isValidId(orderId);
+      }
+    }
+  }
+}

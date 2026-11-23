@@ -1,0 +1,6 @@
+{
+  "name": "EZ AI WORLD",
+  "description": "One Platform. Five Powerful AI Business Solutions — AI Robot Assistant, AI Automation, Online Shopping, AI Business Services, and AI Video Creator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

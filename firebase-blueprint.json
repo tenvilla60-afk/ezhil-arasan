@@ -1,0 +1,277 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered customer profile, subscription tier, and AI usage statistics.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "plan": {
+          "type": "string",
+          "enum": ["starter", "growth", "enterprise"]
+        },
+        "role": {
+          "type": "string",
+          "enum": ["customer", "admin"]
+        },
+        "aiCreditsUsed": {
+          "type": "number"
+        },
+        "aiCreditsLimit": {
+          "type": "number"
+        },
+        "activeServices": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "phone",
+        "company",
+        "plan",
+        "role",
+        "aiCreditsUsed",
+        "aiCreditsLimit",
+        "activeServices",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AutomationTask": {
+      "title": "AutomationTask",
+      "description": "Customer AI automation workflow or task entry.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "enum": ["support", "email", "workflow", "task"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "paused", "completed"]
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "runsCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "category",
+        "status",
+        "trigger",
+        "runsCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BusinessCustomer": {
+      "title": "BusinessCustomer",
+      "description": "CRM customer record managed inside AI Business Services.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "company": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["lead", "active", "retained"]
+        },
+        "monthlyValue": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "email",
+        "company",
+        "stage",
+        "monthlyValue",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PaymentOrder": {
+      "title": "PaymentOrder",
+      "description": "Online Shopping order or Subscription payment submitted via UPI Scanner.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "orderType": {
+          "type": "string",
+          "enum": ["merchandise", "subscription"]
+        },
+        "itemSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["upi_scanner"]
+        },
+        "upiTransactionRef": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 100
+        },
+        "payerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "payerPhone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 30
+        },
+        "shippingAddress": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending_verification", "verified", "fulfilled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "orderType",
+        "itemSummary",
+        "totalAmount",
+        "currency",
+        "paymentMethod",
+        "upiTransactionRef",
+        "payerName",
+        "payerPhone",
+        "shippingAddress",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private customer profile, subscription status, and usage telemetry."
+    },
+    "/users/{userId}/automations/{automationId}": {
+      "schema": { "$ref": "#/entities/AutomationTask" },
+      "description": "AI Automation workflows and tasks owned by the customer."
+    },
+    "/users/{userId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/BusinessCustomer" },
+      "description": "CRM contacts managed by the customer under AI Business Services."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/PaymentOrder" },
+      "description": "UPI Scanner checkout orders and subscription payments owned by the customer."
+    }
+  }
+}
